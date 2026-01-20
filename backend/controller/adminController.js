@@ -1,4 +1,5 @@
 const Admin = require("../models/adminSchema");
+const User = require("../models/userSchema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -99,4 +100,36 @@ const profileAdmin = async (req, res) => {
     }
 };
 
-module.exports = { loginAdmin, registerAdmin, profileAdmin };
+const registerUserbyAdmin = async (req, res) => {
+    try {
+        const { name, email, phone, password, courseName } = req.body;
+
+        if (!name || !email || !phone || !password) {
+            return res.status(400).json({ message: "Please provide all required fields" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists with this email" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = new User({
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            courseName
+        });
+
+        await newUser.save();
+
+        res.status(201).json({ message: "User registered successfully by Admin", user: newUser });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+module.exports = { loginAdmin, registerAdmin, profileAdmin, registerUserbyAdmin };

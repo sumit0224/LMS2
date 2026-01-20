@@ -20,5 +20,5 @@ app.use("/api/admin", adminRoute)
 
 
 app.listen(process.env.PORT || 3000, () => {
-    console.log("server runing on 3000 port")
+    console.log("server runing on  port")
 })
