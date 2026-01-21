@@ -1,6 +1,7 @@
 const Admin = require("../models/adminSchema");
 const User = require("../models/userSchema");
 const Teacher = require("../models/teacherSchema");
+const Course = require("../models/courseSchema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -168,4 +169,70 @@ const registerTeacherbyAdmin = async (req, res) => {
     }
 };
 
-module.exports = { loginAdmin, registerAdmin, profileAdmin, registerUserbyAdmin, registerTeacherbyAdmin };
+const createCourse = async (req, res) => {
+    try {
+        const { title, description, category, price, duration, level, instructor, thumbnail, syllabus, language, prerequisites } = req.body;
+
+        if (!title || !description || !category || !price || !duration || !instructor) {
+            return res.status(400).json({ message: "Please provide all required fields" });
+        }
+
+        const newCourse = new Course({
+            title,
+            description,
+            category,
+            price,
+            duration,
+            level,
+            instructor,
+            thumbnail,
+            syllabus,
+            language,
+            prerequisites
+        });
+
+        await newCourse.save();
+
+        res.status(201).json({ message: "Course created successfully", course: newCourse });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+const updateCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+
+        const updatedCourse = await Course.findByIdAndUpdate(id, updates, { new: true });
+
+        if (!updatedCourse) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+
+        res.status(200).json({ message: "Course updated successfully", course: updatedCourse });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+const deleteCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const deletedCourse = await Course.findByIdAndDelete(id);
+
+        if (!deletedCourse) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+
+        res.status(200).json({ message: "Course deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+module.exports = { loginAdmin, registerAdmin, profileAdmin, registerUserbyAdmin, registerTeacherbyAdmin, createCourse, updateCourse, deleteCourse };

@@ -4,6 +4,8 @@ const dotenv = require("dotenv").config()
 const connectToDB = require("./config/db")
 const adminRoute = require('./routes/adminRoute')
 const userRoute = require("./routes/userRoute")
+const teacherRoute = require("./routes/teacherRoute")
+const courseRoute = require("./routes/courseRoute")
 
 connectToDB()
 
@@ -18,6 +20,8 @@ app.get("/", (req, res) => {
 })
 app.use("/api/admin", adminRoute)
 app.use("/api/users", userRoute)
+app.use("/api/teachers", teacherRoute)
+app.use("/api/course", courseRoute)
 
 
 
