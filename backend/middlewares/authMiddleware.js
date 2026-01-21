@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/adminSchema");
-const User = require("../models/userSchema"); // Optional: if we want to support user auth here too
+const User = require("../models/userSchema");
+const Teacher = require("../models/teacherSchema");
 
 const protect = async (req, res, next) => {
     let token;
@@ -15,22 +16,12 @@ const protect = async (req, res, next) => {
 
             const decoded = jwt.verify(token, "secretKey");
 
-
-            req.user = await Admin.findById(decoded.id).select("-password");
-
-            // If not found in Admin, maybe check User? 
-            // The current requirement is likely for Admin protection.
-            // If req.user is null, it might mean the token belongs to a User, not an Admin, 
-            // OR the Admin was deleted.
-
-            if (!req.user) {
-                // Fallback or specific check. 
-                // If the token has "role: admin", it should be in Admin.
-                if (decoded.role === 'admin') {
-                    return res.status(401).json({ message: "Not authorized, admin not found" });
-                }
-                // If we want to allow generic users:
-                // req.user = await User.findById(decoded.id).select("-password");
+            if (decoded.role === "User") {
+                req.user = await User.findById(decoded.id).select("-password");
+            } else if (decoded.role === "Teacher") {
+                req.user = await Teacher.findById(decoded.id).select("-password");
+            } else {
+                req.user = await Admin.findById(decoded.id).select("-password");
             }
 
             if (!req.user) {
@@ -57,4 +48,20 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, isAdmin };
+const isUser = (req, res, next) => {
+    if (req.user && req.user.role === "User") {
+        next();
+    } else {
+        res.status(401).json({ message: "Not authorized as a user" });
+    }
+};
+
+const isTeacher = (req, res, next) => {
+    if (req.user && req.user.role === "Teacher") {
+        next();
+    } else {
+        res.status(401).json({ message: "Not authorized as a teacher" });
+    }
+};
+
+module.exports = { protect, isAdmin, isUser, isTeacher };

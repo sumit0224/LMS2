@@ -1,5 +1,6 @@
 const Admin = require("../models/adminSchema");
 const User = require("../models/userSchema");
+const Teacher = require("../models/teacherSchema");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -132,4 +133,39 @@ const registerUserbyAdmin = async (req, res) => {
     }
 };
 
-module.exports = { loginAdmin, registerAdmin, profileAdmin, registerUserbyAdmin };
+const registerTeacherbyAdmin = async (req, res) => {
+    try {
+        const { name, email, phone, password, subject, qualification, experience, doj } = req.body;
+
+        if (!name || !email || !phone || !password || !subject || !qualification) {
+            return res.status(400).json({ message: "Please provide all required fields" });
+        }
+
+        const existingTeacher = await Teacher.findOne({ email });
+        if (existingTeacher) {
+            return res.status(400).json({ message: "Teacher already exists with this email" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newTeacher = new Teacher({
+            name,
+            email,
+            phone,
+            password: hashedPassword,
+            subject,
+            qualification,
+            experience,
+            doj
+        });
+
+        await newTeacher.save();
+
+        res.status(201).json({ message: "Teacher registered successfully by Admin", teacher: newTeacher });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+module.exports = { loginAdmin, registerAdmin, profileAdmin, registerUserbyAdmin, registerTeacherbyAdmin };

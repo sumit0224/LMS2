@@ -3,6 +3,7 @@ const app = express()
 const dotenv = require("dotenv").config()
 const connectToDB = require("./config/db")
 const adminRoute = require('./routes/adminRoute')
+const userRoute = require("./routes/userRoute")
 
 connectToDB()
 
@@ -16,6 +17,7 @@ app.get("/", (req, res) => {
 
 })
 app.use("/api/admin", adminRoute)
+app.use("/api/users", userRoute)
 
 
 
