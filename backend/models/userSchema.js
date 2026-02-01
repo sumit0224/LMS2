@@ -50,6 +50,20 @@ const userSchema = new mongoose.Schema({
     courseName: {
         type: String,
         trim: true
+    },
+    enrolledCourses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course"
+    }],
+    batch: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Batch"
+    },
+    role: {
+        type: String,
+        enum: ["admin", "teacher", "student"],
+        immutable: true,
+        required: true  // 🔒 Must be set explicitly, never defaulted
     }
 }, { timestamps: true });
 

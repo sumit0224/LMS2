@@ -1,130 +1,188 @@
-import React, { useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import teacherHero from '../assets/teacher_dashboard_hero.png';
+import api from '../api/axios';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { FaChalkboardTeacher, FaUserGraduate, FaClipboardList, FaCalendarCheck, FaArrowRight, FaBook } from 'react-icons/fa';
 
 const TeacherDashboard = () => {
     const { user } = useContext(AuthContext);
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchAssignedCourses();
+    }, []);
+
+    const fetchAssignedCourses = async () => {
+        try {
+            const { data } = await api.get('/teachers/courses');
+            if (data.success) {
+                setCourses(data.courses);
+            }
+        } catch (error) {
+            console.error('Failed to fetch courses:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)]"></div>
+            </div>
+        );
+    }
+
+    const totalStudents = courses.reduce((sum, c) => sum + (c.enrollmentCount || 0), 0);
+    const activeCourses = courses.filter(c => c.status === 'Active').length;
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-12">
-            {/* Hero Section */}
-            <div className="relative bg-teal-800 text-white overflow-hidden shadow-lg">
-                <div className="absolute inset-0">
-                    <img className="w-full h-full object-cover opacity-30" src={teacherHero} alt="Classroom Management" />
-                    <div className="absolute inset-0 bg-teal-900 mix-blend-multiply" aria-hidden="true"></div>
-                </div>
-                <div className="relative max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-                    <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">Teacher Dashboard</h1>
-                    <p className="mt-6 text-xl max-w-3xl">
-                        Welcome, {user?.name}. Manage your classes, students, and curriculum efficiently from here.
+        <div className="space-y-8 animate-fade-in">
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-8 text-white shadow-xl">
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+                <div className="relative z-10">
+                    <h1 className="text-3xl font-bold">Instructor Portal</h1>
+                    <p className="mt-2 text-emerald-50">
+                        Welcome back, <span className="font-semibold text-white uppercase tracking-wide">{user?.name}</span>.
+                        Inspire the next generation of <span className="font-bold">AppWars</span> developers.
                     </p>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
-                {/* User Info Card */}
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
-                    <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
-                        <h3 className="text-lg leading-6 font-medium text-gray-900">Instructor Details</h3>
-                        <p className="mt-1 max-w-2xl text-sm text-gray-500">Your profile and teaching credentials.</p>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="flex items-center p-6 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none">
+                    <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm mr-4">
+                        <FaBook className="text-2xl" />
                     </div>
-                    <div className="border-t border-gray-200">
-                        <dl>
-                            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt className="text-sm font-medium text-gray-500">Full name</dt>
-                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user?.name}</dd>
+                    <div>
+                        <p className="text-indigo-100 text-sm font-medium">Assigned Courses</p>
+                        <p className="text-3xl font-bold">{courses.length}</p>
+                    </div>
+                </Card>
+                <Card className="flex items-center p-6 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none">
+                    <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm mr-4">
+                        <FaUserGraduate className="text-2xl" />
+                    </div>
+                    <div>
+                        <p className="text-emerald-100 text-sm font-medium">Total Students</p>
+                        <p className="text-3xl font-bold">{totalStudents}</p>
+                    </div>
+                </Card>
+                <Card className="flex items-center p-6 bg-white border border-[var(--color-border)]">
+                    <div className="p-3 bg-blue-50 rounded-lg mr-4">
+                        <FaClipboardList className="text-2xl text-blue-600" />
+                    </div>
+                    <div>
+                        <p className="text-[var(--color-text-secondary)] text-sm font-medium">Pending Assignments</p>
+                        <p className="text-3xl font-bold text-[var(--color-text-primary)]">--</p>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Course List (2 Cols) */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">My Courses</h2>
+                        <span className="text-sm text-[var(--color-text-secondary)]">{activeCourses} Active</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {courses.length > 0 ? (
+                            courses.map((course) => (
+                                <Card key={course._id} className="flex flex-col h-full hover:shadow-lg transition-transform hover:-translate-y-1">
+                                    <div className="h-32 bg-gray-100 relative">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary-light)] to-[var(--color-background)] opacity-50"></div>
+                                        <div className="absolute bottom-4 left-4 right-4">
+                                            <span className={`inline-block px-2 py-1 rounded text-xs font-bold shadow-sm ${course.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                {course.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <Card.Content className="flex-1 flex flex-col">
+                                        <h3 className="text-lg font-bold text-[var(--color-text-primary)] mb-2 line-clamp-1">{course.title}</h3>
+                                        <p className="text-sm text-[var(--color-text-secondary)] mb-4 line-clamp-2 flex-1">
+                                            {course.description || "No description provided."}
+                                        </p>
+                                        <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-4">
+                                            <span className="flex items-center gap-1"><FaUserGraduate /> {course.enrollmentCount || 0} Students</span>
+                                        </div>
+                                        <Link to={`/teacher/course/${course._id}`} className="block">
+                                            <Button variant="primary" size="sm" className="w-full">
+                                                Manage Course
+                                            </Button>
+                                        </Link>
+                                    </Card.Content>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="col-span-full py-12 text-center text-[var(--color-text-secondary)] bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)]">
+                                <FaBook className="mx-auto text-4xl text-gray-300 mb-3" />
+                                <p>No courses assigned to you yet.</p>
                             </div>
-                            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt className="text-sm font-medium text-gray-500">Email address</dt>
-                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{user?.email}</dd>
-                            </div>
-                            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt className="text-sm font-medium text-gray-500">Role</dt>
-                                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 capitalize">{user?.role}</dd>
-                            </div>
-                        </dl>
+                        )}
                     </div>
                 </div>
 
-                {/* Dashboard Widgets */}
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {/* Class Management Widget */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-teal-500 rounded-md p-3">
-                                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">My Students</dt>
-                                        <dd>
-                                            <div className="text-lg font-medium text-gray-900">Manage Classes</div>
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-gray-50 px-5 py-3">
-                            <div className="text-sm">
-                                <a href="#" className="font-medium text-teal-600 hover:text-teal-500">View Roster</a>
-                            </div>
-                        </div>
+                {/* Sidebar / Quick Actions (1 Col) */}
+                <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Quick Actions</h2>
+                    <div className="space-y-4">
+                        <Link to="/teacher/assignments" className="block text-inherit no-underline">
+                            <Card className="hover:border-[var(--color-primary)] transition-colors group cursor-pointer">
+                                <Card.Content className="flex items-center gap-4">
+                                    <div className="p-3 bg-purple-50 rounded-lg group-hover:scale-110 transition-transform">
+                                        <FaClipboardList className="text-xl text-purple-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-[var(--color-text-primary)]">Assignments</h4>
+                                        <p className="text-xs text-[var(--color-text-secondary)]">Create & Grade tasks</p>
+                                    </div>
+                                    <FaArrowRight className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" />
+                                </Card.Content>
+                            </Card>
+                        </Link>
+                        <Link to="/teacher/attendance" className="block text-inherit no-underline">
+                            <Card className="hover:border-[var(--color-primary)] transition-colors group cursor-pointer">
+                                <Card.Content className="flex items-center gap-4">
+                                    <div className="p-3 bg-blue-50 rounded-lg group-hover:scale-110 transition-transform">
+                                        <FaCalendarCheck className="text-xl text-blue-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-semibold text-[var(--color-text-primary)]">Attendance</h4>
+                                        <p className="text-xs text-[var(--color-text-secondary)]">Track daily presence</p>
+                                    </div>
+                                    <FaArrowRight className="text-[var(--color-text-secondary)] group-hover:text-[var(--color-primary)]" />
+                                </Card.Content>
+                            </Card>
+                        </Link>
                     </div>
 
-                    {/* Course Content Widget */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-orange-500 rounded-md p-3">
-                                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                    </svg>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Curriculum</dt>
-                                        <dd>
-                                            <div className="text-lg font-medium text-gray-900">Edit Courses</div>
-                                        </dd>
-                                    </dl>
-                                </div>
+                    <Card className="bg-[var(--color-surface)] mt-8">
+                        <Card.Header>
+                            <Card.Title className="text-base">Instructor Profile</Card.Title>
+                        </Card.Header>
+                        <Card.Content className="space-y-3">
+                            <div className="flex justify-between border-b border-[var(--color-border)] pb-2">
+                                <span className="text-sm text-[var(--color-text-secondary)]">Name</span>
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">{user?.name}</span>
                             </div>
-                        </div>
-                        <div className="bg-gray-50 px-5 py-3">
-                            <div className="text-sm">
-                                <a href="#" className="font-medium text-teal-600 hover:text-teal-500">Update Content</a>
+                            <div className="flex justify-between border-b border-[var(--color-border)] pb-2">
+                                <span className="text-sm text-[var(--color-text-secondary)]">Subject</span>
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">{user?.subject}</span>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Analytics Widget */}
-                    <div className="bg-white overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
-                                    <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z" />
-                                    </svg>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 truncate">Reports</dt>
-                                        <dd>
-                                            <div className="text-lg font-medium text-gray-900">Student Progress</div>
-                                        </dd>
-                                    </dl>
-                                </div>
+                            <div className="flex justify-between">
+                                <span className="text-sm text-[var(--color-text-secondary)]">Experience</span>
+                                <span className="text-sm font-medium text-[var(--color-text-primary)]">{user?.experience || 'N/A'}</span>
                             </div>
-                        </div>
-                        <div className="bg-gray-50 px-5 py-3">
-                            <div className="text-sm">
-                                <a href="#" className="font-medium text-teal-600 hover:text-teal-500">View Analytics</a>
-                            </div>
-                        </div>
-                    </div>
+                        </Card.Content>
+                    </Card>
                 </div>
             </div>
         </div>

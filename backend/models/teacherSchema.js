@@ -50,6 +50,16 @@ const teacherSchema = new mongoose.Schema({
     doj: {
         type: Date,
         default: Date.now
+    },
+    assignedCourses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course"
+    }],
+    role: {
+        type: String,
+        enum: ["teacher"],
+        default: "teacher",
+        immutable: true  // 🔒 SECURITY: Role cannot be changed
     }
 }, { timestamps: true });
 

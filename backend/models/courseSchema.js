@@ -55,7 +55,12 @@ const courseSchema = new mongoose.Schema({
     },
     prerequisites: [{
         type: String
-    }]
+    }],
+    status: {
+        type: String,
+        enum: ["Draft", "Active"],
+        default: "Draft"
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Course", courseSchema);

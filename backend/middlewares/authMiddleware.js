@@ -1,5 +1,4 @@
 const jwt = require("jsonwebtoken");
-const Admin = require("../models/adminSchema");
 const User = require("../models/userSchema");
 const Teacher = require("../models/teacherSchema");
 
@@ -14,14 +13,15 @@ const protect = async (req, res, next) => {
             // Get token from header
             token = req.headers.authorization.split(" ")[1];
 
-            const decoded = jwt.verify(token, "secretKey");
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            if (decoded.role === "User") {
+            // 🔒 Unified User model for admin/student, separate Teacher model
+            if (decoded.role === "student" || decoded.role === "admin") {
                 req.user = await User.findById(decoded.id).select("-password");
-            } else if (decoded.role === "Teacher") {
+            } else if (decoded.role === "teacher") {
                 req.user = await Teacher.findById(decoded.id).select("-password");
             } else {
-                req.user = await Admin.findById(decoded.id).select("-password");
+                return res.status(401).json({ message: "Invalid role in token" });
             }
 
             if (!req.user) {
@@ -31,12 +31,12 @@ const protect = async (req, res, next) => {
             next();
         } catch (error) {
             console.log(error);
-            res.status(401).json({ message: "Not authorized" });
+            return res.status(401).json({ message: "Not authorized" });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: "Not authorized, no token" });
+        return res.status(401).json({ message: "Not authorized, no token" });
     }
 };
 
@@ -44,24 +44,25 @@ const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === "admin") {
         next();
     } else {
-        res.status(401).json({ message: "Not authorized as an admin" });
+        res.status(403).json({ message: "Not authorized as an admin" });
     }
 };
 
 const isUser = (req, res, next) => {
-    if (req.user && req.user.role === "User") {
+    if (req.user && req.user.role === "student") {
         next();
     } else {
-        res.status(401).json({ message: "Not authorized as a user" });
+        res.status(403).json({ message: "Not authorized as a student" });
     }
 };
 
 const isTeacher = (req, res, next) => {
-    if (req.user && req.user.role === "Teacher") {
+    if (req.user && req.user.role === "teacher") {
         next();
     } else {
-        res.status(401).json({ message: "Not authorized as a teacher" });
+        res.status(403).json({ message: "Not authorized as a teacher" });
     }
 };
 
 module.exports = { protect, isAdmin, isUser, isTeacher };
+

@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const submissionSchema = new mongoose.Schema({
+    assignment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Assignment",
+        required: true
+    },
     student: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -11,33 +16,46 @@ const submissionSchema = new mongoose.Schema({
         ref: "Course",
         required: true
     },
-    moduleId: {
-        type: String, // Or ObjectId related to backend/models/syllabusSchema.js
-        required: true
-    },
-    assignmentTitle: {
+    submissionText: {
         type: String,
-        required: true
+        default: ""
     },
-    submissionUrl: {
-        type: String, // Link to uploaded file
-        required: true
+    submissionFile: {
+        type: String, // file URL
+        default: ""
     },
-    submittedAt: {
-        type: Date,
-        default: Date.now
+    marksObtained: {
+        type: Number,
+        default: null
+    },
+    feedback: {
+        type: String,
+        default: ""
     },
     status: {
         type: String,
-        enum: ["Pending", "Graded", "Rejected"],
-        default: "Pending"
+        enum: ["Submitted", "Reviewed"],
+        default: "Submitted"
     },
-    grade: {
-        type: String // A, B, C or 80/100
+    isLate: {
+        type: Boolean,
+        default: false
     },
-    feedback: {
-        type: String
+    attemptNumber: {
+        type: Number,
+        default: 1
     }
 }, { timestamps: true });
+
+// CRITICAL: Enforce one submission per assignment per student
+submissionSchema.index(
+    { assignment: 1, student: 1 },
+    { unique: true }
+);
+
+// Performance indexes
+submissionSchema.index({ student: 1, status: 1 });
+submissionSchema.index({ assignment: 1, status: 1 });
+submissionSchema.index({ course: 1 });
 
 module.exports = mongoose.model("Submission", submissionSchema);

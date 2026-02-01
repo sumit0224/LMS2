@@ -25,7 +25,8 @@ const adminSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: "admin"
+        default: "admin",
+        immutable: true  // 🔒 SECURITY: Role cannot be changed after creation
     }
 }, { timestamps: true });
 

@@ -1,40 +1,51 @@
 const mongoose = require("mongoose");
 
 const attendanceSchema = new mongoose.Schema({
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: [true, "Student is required"]
-    },
     course: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course",
         required: [true, "Course is required"]
     },
+    batch: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Batch"
+    },
     date: {
         type: Date,
-        required: [true, "Date is required"],
-        default: Date.now
+        required: [true, "Date is required"]
     },
-    status: {
-        type: String,
-        enum: ["Present", "Absent", "Late", "Excused"],
-        default: "Present",
-        required: true
-    },
+    records: [{
+        student: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        status: {
+            type: String,
+            enum: ["Present", "Absent", "Late", "Excused"],
+            default: "Absent"
+        }
+    }],
     markedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Teacher", // or "Admin", could differ based on system
+        ref: "Teacher",
+        required: true
     },
-    remarks: {
+    notes: {
         type: String,
         trim: true,
-        maxlength: [200, "Remarks cannot exceed 200 characters"]
+        maxlength: [500, "Notes cannot exceed 500 characters"]
     }
 }, { timestamps: true });
 
-// Compound index to ensure a student isn't marked twice for the same course on the same date (optional but recommended)
-// Note: 'date' might need truncation to just YYYY-MM-DD for this to work strictly as "daily attendance"
-attendanceSchema.index({ student: 1, course: 1, date: 1 });
+// CRITICAL: Prevent duplicate attendance for same course & date
+attendanceSchema.index(
+    { course: 1, date: 1 },
+    { unique: true }
+);
+
+// Performance indexes
+attendanceSchema.index({ markedBy: 1 });
+attendanceSchema.index({ "records.student": 1 });
 
 module.exports = mongoose.model("Attendance", attendanceSchema);
